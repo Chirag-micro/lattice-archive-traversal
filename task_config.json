@@ -4,7 +4,7 @@
   "task_type": "vulnerability_remediation",
   "repo": {
     "source_url": "https://github.com/Chirag-micro/lattice-archive-traversal",
-    "base_commit": "55ec9f0966a245f15073dcd5ce3c5448a4a55928",
+    "base_commit": "181fb3b1e46f2b087f242d8843c8140039e832e6",
     "image_name": "micro1ai/lattice-archive-traversal-task-3:v1",
     "repo_dir": "/repo",
     "language": "python"
