@@ -1,0 +1,1 @@
+The bundle access policy only governs whether a caller may use a bundle code at all. After that check, the requested file name is treated as trusted and passed into a shared storage helper that appends it to the bundle root without canonicalizing the resulting path or enforcing that the resolved file remains inside the bundle directory.

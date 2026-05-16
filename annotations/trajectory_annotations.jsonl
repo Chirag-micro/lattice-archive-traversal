@@ -1,0 +1,2 @@
+{"label":"root_cause","summary":"Shared storage logic trusts user-controlled file names and joins them to the bundle root without containment checks."}
+{"label":"fix_strategy","summary":"Canonicalize candidate paths and require them to remain inside the resolved bundle root while preserving nested bundle files."}

@@ -1,0 +1,11 @@
+Metadata-Version: 2.4
+Name: lattice-archive
+Version: 0.1.0
+Summary: Workspace export bundle portal.
+Requires-Python: >=3.11
+Description-Content-Type: text/markdown
+
+# Lattice Archive
+
+Lattice Archive serves workspace export bundles and file previews from reusable
+download links.

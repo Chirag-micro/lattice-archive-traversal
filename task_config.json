@@ -1,0 +1,58 @@
+{
+  "instance_id": "shield__lattice-archive-traversal_001",
+  "pipeline": "shield",
+  "task_type": "vulnerability_remediation",
+  "repo": {
+    "source_url": "https://github.com/Chirag-micro/lattice-archive-traversal-task",
+    "base_commit": "d0e866205d175b5188be860704676be7cf44dba4",
+    "image_name": "micro1ai/lattice-archive-traversal-task:v2",
+    "repo_dir": "/repo",
+    "language": "python"
+  },
+  "title": "Path traversal via conditional validation bypass in lattice archive",
+  "track": "Realm Shield",
+  "owasp_top_10_2025": [
+    "A01:2025 — Broken Access Control"
+  ],
+  "cwe_ids": [
+    "CWE-22"
+  ],
+  "test_cmd": "python -m pytest tests/test_hidden_c4f8b291_containment.py tests/test_archive_flows.py -v",
+  "log_parser": "parse_log_pytest",
+  "FAIL_TO_PASS": [
+    "tests/test_hidden_c4f8b291_containment.py::test_preview_cannot_escape_bundle_into_workspace_draft",
+    "tests/test_hidden_c4f8b291_containment.py::test_download_cannot_escape_bundle_into_workspace_draft",
+    "tests/test_hidden_c4f8b291_containment.py::test_preview_cannot_escape_bundle_into_other_workspace_export",
+    "tests/test_hidden_c4f8b291_containment.py::test_preview_cannot_escape_bundle_into_ops_only_notes"
+  ],
+  "PASS_TO_PASS": [
+    "tests/test_hidden_c4f8b291_containment.py::test_workspace_member_can_preview_top_level_bundle_file",
+    "tests/test_hidden_c4f8b291_containment.py::test_workspace_member_can_download_nested_bundle_file",
+    "tests/test_hidden_c4f8b291_containment.py::test_workspace_member_can_preview_nested_bundle_file",
+    "tests/test_hidden_c4f8b291_containment.py::test_ops_member_can_preview_ops_bundle_file",
+    "tests/test_hidden_c4f8b291_containment.py::test_admin_can_preview_foreign_workspace_bundle_file",
+    "tests/test_hidden_c4f8b291_containment.py::test_foreign_workspace_bundle_is_masked",
+    "tests/test_hidden_c4f8b291_containment.py::test_unknown_bundle_is_masked"
+  ],
+  "hidden_test_patch": "test_patch.diff",
+  "golden_patch": "gold_patch.diff",
+  "behavioral_prompt": "prompt.txt",
+  "cvss_severity_band": "high",
+  "rubric": "rubric.md",
+  "reward_spec": "reward_spec.md",
+  "reasoning": "reasoning.txt",
+  "environment_interface": "environment_interface.md",
+  "deterministic_verifier": "grader/grade.py",
+  "run_tests_script": "run_tests.sh",
+  "annotations": {
+    "root_cause": "annotations/root_cause.md",
+    "attack_vector": "annotations/attack_vector.md",
+    "fix_rationale": "annotations/fix_rationale.md",
+    "alternatives_considered": "annotations/alternatives_considered.md",
+    "trajectory_annotations": "annotations/trajectory_annotations.jsonl"
+  },
+  "reviews": {
+    "peer_review": "reviews/peer_review.md",
+    "signoff": "reviews/signoff.md"
+  }
+}
