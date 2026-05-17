@@ -14,8 +14,8 @@ the Realm Shield bundle format.
 
 The agent-visible prompt is `prompt.txt`. It describes symptoms only:
 
-- copied bundle file names can return files outside the intended shared export
-- reused names can surface drafts or files from another workspace
+- copied bundle file names can return unexpected records
+- reused names can surface operational notes or draft calculations
 - inaccessible file names should remain indistinguishable from unknown ones
 
 It intentionally avoids file paths, implementation names, and vulnerability
@@ -46,6 +46,5 @@ Fixed snapshot expectations after applying both patches:
 
 ## Validation notes
 
-The vulnerable and fixed states were sanity-checked with direct runtime
-assertions during authoring and then validated end to end through the
-Docker-backed verifier in `grader/grade.py`.
+The vulnerable and fixed states are validated end to end through the
+deterministic verifier in `grader/grade.py`.

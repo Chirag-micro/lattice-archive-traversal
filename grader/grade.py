@@ -29,6 +29,21 @@ def build_env(repo_root: Path) -> dict[str, str]:
     return env
 
 
+def python_executable() -> str:
+    configured = os.environ.get("PYTHON")
+    if configured:
+        return configured
+
+    for candidate in (
+        ROOT / ".venv" / "bin" / "python",
+        ROOT / ".venv" / "Scripts" / "python.exe",
+    ):
+        if candidate.exists():
+            return str(candidate)
+
+    return sys.executable
+
+
 def apply_patch(repo_root: Path, patch_path: Path) -> None:
     commands = [
         ["git", "apply", "--whitespace=nowarn", str(patch_path)],
@@ -36,12 +51,16 @@ def apply_patch(repo_root: Path, patch_path: Path) -> None:
     ]
     failures: list[str] = []
     for command in commands:
-        process = subprocess.run(
-            command,
-            cwd=repo_root,
-            capture_output=True,
-            text=True,
-        )
+        try:
+            process = subprocess.run(
+                command,
+                cwd=repo_root,
+                capture_output=True,
+                text=True,
+            )
+        except FileNotFoundError as exc:
+            failures.append(f"command: {' '.join(command)}\nerror:\n{exc}")
+            continue
         if process.returncode == 0:
             return
         failures.append(
@@ -52,7 +71,7 @@ def apply_patch(repo_root: Path, patch_path: Path) -> None:
 
 def run_test(repo_root: Path, test_id: str) -> dict[str, Any]:
     process = subprocess.run(
-        [sys.executable, "-m", "pytest", test_id, "-q"],
+        [python_executable(), "-m", "pytest", test_id, "-q"],
         cwd=repo_root,
         env=build_env(repo_root),
         capture_output=True,

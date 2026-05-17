@@ -27,7 +27,7 @@ directly to the bundle root without any containment check.
 
 The design intent was likely to optimize performance for trusted workspace
 members by skipping validation for known entries, but the logic flaw allows
-ANY file name (not just known entries) to bypass validation when strict=False.
+any file name, not just known entries, to bypass validation when strict=False.
 
 EXPLOIT
 =======
@@ -41,9 +41,9 @@ Request:
 Flow:
 
 1. ArchiveService resolves bundle BX-APR-441 with audience="workspace"
-2. strict = ("workspace" == "ops") → False
+2. strict = ("workspace" == "ops") -> False
 3. StorageGateway._resolve_path() called with strict_mode=False
-4. Condition: `if False or "../../drafts/..." in known_entries` → False
+4. Condition: `if False or "../../drafts/..." in known_entries` -> False
 5. Returns raw candidate path without validation
 6. Path resolves to: data/workspaces/ws-finance-a/drafts/april-adjustments.csv
 7. File is read and returned to the user
@@ -74,13 +74,13 @@ WHY THIS IS HARDER
 
 3. The vulnerability requires understanding the boolean logic:
    `if strict_mode or requested_name in known_entries`
-   When strict_mode=False AND name not in known_entries → validation skipped
+   When strict_mode=False AND name not in known_entries -> validation skipped
 
 4. The design appears intentional (performance optimization for trusted
    workspace members), making it look like a feature rather than a bug.
 
 5. Requires tracing across 3 layers:
-   ArchiveService (sets strict=False) → StorageGateway (skips validation) → PathValidator (never called)
+   ArchiveService (sets strict=False) -> StorageGateway (skips validation) -> PathValidator (never called)
 
-6. The known_entries parameter is always passed (bundle.entries), but it's
+6. The known_entries parameter is always passed (bundle.entries), but it is
    only used when strict_mode=False, creating confusion about its purpose.

@@ -4,7 +4,7 @@
   "task_type": "vulnerability_remediation",
   "repo": {
     "source_url": "https://github.com/Chirag-micro/lattice-archive-traversal",
-    "base_commit": "a698a78ad48d07d64da9712550397e91f9959896",
+    "base_commit": "ed413f273f309e8018a59c580dbdcf57b99b1a99",
     "image_name": "micro1ai/lattice-archive-traversal-task-3:v1",
     "repo_dir": "/repo",
     "language": "python"
@@ -12,7 +12,7 @@
   "title": "Path traversal via conditional validation bypass in lattice archive",
   "track": "Realm Shield",
   "owasp_top_10_2025": [
-    "A01:2025 — Broken Access Control"
+    "A01:2025 - Broken Access Control"
   ],
   "cwe_ids": [
     "CWE-22"
