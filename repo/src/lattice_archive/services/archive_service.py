@@ -20,12 +20,12 @@ class ArchiveService:
         bundle = self._resolver.resolve(code)
         if not self._policy.can_access_bundle(actor, bundle):
             raise ArchiveNotFound("archive not found")
-        known = bundle.entries if "OPS" in code else ()
-        return self._storage.preview_text(bundle.root_path, requested_name, known)
+        strict = bundle.audience == "ops"
+        return self._storage.preview_text(bundle.root_path, requested_name, bundle.entries, strict)
 
     def download_bundle_file(self, actor: Actor, code: str, requested_name: str) -> bytes:
         bundle = self._resolver.resolve(code)
         if not self._policy.can_access_bundle(actor, bundle):
             raise ArchiveNotFound("archive not found")
-        known = bundle.entries if "OPS" in code else ()
-        return self._storage.download_bytes(bundle.root_path, requested_name, known)
+        strict = bundle.audience == "ops"
+        return self._storage.download_bytes(bundle.root_path, requested_name, bundle.entries, strict)

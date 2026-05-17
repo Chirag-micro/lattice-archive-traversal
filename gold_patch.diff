@@ -1,15 +1,14 @@
 diff --git a/src/lattice_archive/services/storage_gateway.py b/src/lattice_archive/services/storage_gateway.py
 --- a/src/lattice_archive/services/storage_gateway.py
 +++ b/src/lattice_archive/services/storage_gateway.py
-@@ -20,10 +20,8 @@
+@@ -20,9 +20,7 @@
          return file_path.read_bytes()
  
-     def _resolve_path(self, bundle_root: Path, requested_name: str, known_entries: tuple[str, ...]) -> Path:
--        if requested_name in known_entries:
--            candidate = bundle_root / requested_name
+     def _resolve_path(self, bundle_root: Path, requested_name: str, known_entries: tuple[str, ...], strict_mode: bool = True) -> Path:
+         candidate = bundle_root / requested_name
+-        if strict_mode or requested_name in known_entries:
 -            return self._path_validator.safeguard(bundle_root, candidate)
--        return bundle_root / requested_name
-+        candidate = bundle_root / requested_name
+-        return candidate
 +        return self._path_validator.safeguard(bundle_root, candidate)
  
  

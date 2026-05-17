@@ -1,31 +1,33 @@
-TASK: shield__python_lattice_archive_traversal_001
-CWE-22 Path Traversal via conditional validation bypass in storage gateway
+TASK: shield__lattice-archive-traversal_001
+CWE-22 Path Traversal via strict_mode bypass in storage gateway
 
 ROOT CAUSE
 ==========
 
-Lattice Archive implements path validation, but only conditionally. The
-StorageGateway._resolve_path() method checks whether a requested file name
-appears in the bundle's known_entries tuple:
+Lattice Archive implements path validation through PathValidator.safeguard(),
+which properly resolves paths and verifies containment using relative_to().
+However, the validation is controlled by a strict_mode parameter that can be
+disabled:
 
-    if requested_name in known_entries:
+    def _resolve_path(self, bundle_root: Path, requested_name: str, known_entries: tuple[str, ...], strict_mode: bool = True) -> Path:
         candidate = bundle_root / requested_name
-        return self._path_validator.safeguard(bundle_root, candidate)
-    return bundle_root / requested_name
+        if strict_mode or requested_name in known_entries:
+            return self._path_validator.safeguard(bundle_root, candidate)
+        return candidate
 
-The safeguard() method properly resolves both paths and verifies containment
-using relative_to(). However, this validation only executes when the file
-name is in known_entries.
+The vulnerability is in ArchiveService, which sets strict_mode based on bundle
+audience:
 
-The vulnerability is in ArchiveService, which selectively passes known_entries:
+    strict = bundle.audience == "ops"
+    return self._storage.preview_text(bundle.root_path, requested_name, bundle.entries, strict)
 
-    known = bundle.entries if "OPS" in code else ()
-    return self._storage.preview_text(bundle.root_path, requested_name, known)
+For workspace-audience bundles (audience="workspace"), strict_mode=False,
+bypassing the path validation entirely. User-controlled file names are joined
+directly to the bundle root without any containment check.
 
-For non-OPS bundles (like "BX-APR-441"), an empty tuple is passed, meaning
-the validation branch is never taken. User-controlled file names are joined
-directly to the bundle root without any path containment check, enabling
-traversal into sibling directories.
+The design intent was likely to optimize performance for trusted workspace
+members by skipping validation for known entries, but the logic flaw allows
+ANY file name (not just known entries) to bypass validation when strict=False.
 
 EXPLOIT
 =======
@@ -33,54 +35,52 @@ EXPLOIT
 Request:
 
     actor: workspace member (alma)
-    code: BX-APR-441
+    code: BX-APR-441  (audience="workspace")
     requested_name: ../../drafts/april-adjustments.csv
 
 Flow:
 
-1. The bundle access policy validates that alma can access BX-APR-441
-   (same workspace). This check passes.
-2. ArchiveService checks if "OPS" is in "BX-APR-441". It is not.
-3. known_entries is set to an empty tuple ().
-4. StorageGateway._resolve_path() receives known_entries=().
-5. The condition `requested_name in known_entries` evaluates to False.
-6. The method returns `bundle_root / requested_name` without validation.
-7. The resulting path resolves to:
-   data/workspaces/ws-finance-a/drafts/april-adjustments.csv
-8. The file is read and returned to the user.
+1. ArchiveService resolves bundle BX-APR-441 with audience="workspace"
+2. strict = ("workspace" == "ops") → False
+3. StorageGateway._resolve_path() called with strict_mode=False
+4. Condition: `if False or "../../drafts/..." in known_entries` → False
+5. Returns raw candidate path without validation
+6. Path resolves to: data/workspaces/ws-finance-a/drafts/april-adjustments.csv
+7. File is read and returned to the user
 
-The same flow works for downloading bytes and for reaching files in
-neighboring workspace exports or ops-restricted directories.
+The same flow works for downloading bytes and reaching files in neighboring
+workspace exports or ops-restricted directories.
 
 FIX
 ===
 
-Remove the conditional validation and apply the safeguard to all paths:
+Remove the conditional validation and always apply the safeguard:
 
-    def _resolve_path(self, bundle_root: Path, requested_name: str, known_entries: tuple[str, ...]) -> Path:
+    def _resolve_path(self, bundle_root: Path, requested_name: str, known_entries: tuple[str, ...], strict_mode: bool = True) -> Path:
         candidate = bundle_root / requested_name
         return self._path_validator.safeguard(bundle_root, candidate)
 
-This ensures every path is resolved and verified to remain inside the
-bundle directory, regardless of whether the file name appears in the
-bundle's entry list.
+This ensures every path is validated regardless of the strict_mode parameter
+or whether the file name appears in known_entries.
 
 WHY THIS IS HARDER
 ==================
 
-1. The code contains a working path validator (PathValidator.safeguard),
-   which may mislead agents into thinking validation is already in place.
+1. The code contains a working path validator (PathValidator.safeguard) that
+   appears to be called in most code paths, creating a false sense of security.
 
-2. The validation is gated by a conditional that appears intentional
-   (optimization for known entries), making it look like a performance
-   shortcut rather than a security flaw.
+2. The strict_mode parameter defaults to True, suggesting safe-by-default
+   behavior, but ArchiveService explicitly disables it for workspace bundles.
 
-3. The ArchiveService uses a string matching heuristic ("OPS" in code)
-   to decide whether to pass known_entries, which seems like a legitimate
-   business rule for ops bundles.
+3. The vulnerability requires understanding the boolean logic:
+   `if strict_mode or requested_name in known_entries`
+   When strict_mode=False AND name not in known_entries → validation skipped
 
-4. The vulnerability requires tracing the flow across three layers:
-   ArchiveService → StorageGateway._resolve_path → PathValidator.safeguard
+4. The design appears intentional (performance optimization for trusted
+   workspace members), making it look like a feature rather than a bug.
 
-5. The exploit does not use obvious patterns in the bundle code or
-   file name that would trigger string-based detection.
+5. Requires tracing across 3 layers:
+   ArchiveService (sets strict=False) → StorageGateway (skips validation) → PathValidator (never called)
+
+6. The known_entries parameter is always passed (bundle.entries), but it's
+   only used when strict_mode=False, creating confusion about its purpose.
