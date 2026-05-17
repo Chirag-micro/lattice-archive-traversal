@@ -1,7 +1,9 @@
-diff --git a/repo/src/lattice_archive/services/storage_gateway.py b/repo/src/lattice_archive/services/storage_gateway.py
---- a/repo/src/lattice_archive/services/storage_gateway.py
-+++ b/repo/src/lattice_archive/services/storage_gateway.py
-@@ -22,7 +22,5 @@ class StorageGateway:
+diff --git a/src/lattice_archive/services/storage_gateway.py b/src/lattice_archive/services/storage_gateway.py
+index 03b3631..dc21a95 100644
+--- a/src/lattice_archive/services/storage_gateway.py
++++ b/src/lattice_archive/services/storage_gateway.py
+@@ -21,9 +21,7 @@ class StorageGateway:
+ 
      def _resolve_path(self, bundle_root: Path, requested_name: str, known_entries: tuple[str, ...], strict_mode: bool = True) -> Path:
          candidate = bundle_root / requested_name
 -        if strict_mode or requested_name in known_entries:
