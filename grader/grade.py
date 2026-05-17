@@ -44,6 +44,19 @@ def python_executable() -> str:
     return sys.executable
 
 
+def strip_repo_prefix(patch_path: Path) -> str | None:
+    text = patch_path.read_text(encoding="utf-8")
+    rewritten = (
+        text.replace("diff --git a/repo/", "diff --git a/")
+        .replace(" b/repo/", " b/")
+        .replace("--- a/repo/", "--- a/")
+        .replace("+++ b/repo/", "+++ b/")
+    )
+    if rewritten == text:
+        return None
+    return rewritten
+
+
 def apply_patch(repo_root: Path, patch_path: Path) -> None:
     commands = [
         ["git", "apply", "--whitespace=nowarn", str(patch_path)],
@@ -66,6 +79,26 @@ def apply_patch(repo_root: Path, patch_path: Path) -> None:
         failures.append(
             f"command: {' '.join(command)}\nstdout:\n{process.stdout}\n\nstderr:\n{process.stderr}"
         )
+    stripped_patch = strip_repo_prefix(patch_path)
+    if stripped_patch is not None:
+        with tempfile.NamedTemporaryFile("w", encoding="utf-8", suffix=".diff", delete=False) as fh:
+            fh.write(stripped_patch)
+            stripped_path = Path(fh.name)
+        try:
+            process = subprocess.run(
+                ["git", "apply", "--whitespace=nowarn", str(stripped_path)],
+                cwd=repo_root,
+                capture_output=True,
+                text=True,
+            )
+            if process.returncode == 0:
+                return
+            failures.append(
+                "command: git apply --whitespace=nowarn <repo-prefix-stripped patch>\n"
+                f"stdout:\n{process.stdout}\n\nstderr:\n{process.stderr}"
+            )
+        finally:
+            stripped_path.unlink(missing_ok=True)
     raise RuntimeError(f"failed to apply patch {patch_path.name}\n\n" + "\n\n".join(failures))
 
 
