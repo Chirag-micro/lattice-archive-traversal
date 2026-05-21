@@ -17,7 +17,10 @@ RUN find /repo -type d \( \
         -name ".pytest_cache" -o \
         -name "*.egg-info" \
     \) -prune -exec rm -rf {} + \
-    && find /repo -type f -name "*.pyc" -delete
+    && find /repo -type f -name "*.pyc" -delete \
+    && find /repo -type f -name "*.py" -exec sed -i 's/\r$//' {} + \
+    && find /repo -type f -exec chmod 0644 {} + \
+    && find /repo -type d -exec chmod 0755 {} +
 
 RUN git config --global user.email "task-builder@local" \
     && git config --global user.name "Task Builder" \
